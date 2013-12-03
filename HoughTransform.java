@@ -4,7 +4,8 @@ import java.awt.image.BufferedImage;
 import java.awt.*; 
 import java.util.Vector; 
 import java.io.File; 
- 
+import javax.imageio.ImageIO;
+
 /** 
  * <p/> 
  * Java Implementation of the Hough Transform.<br /> 
@@ -48,25 +49,41 @@ import java.io.File;
 public class HoughTransform extends Thread { 
  
     public static void main(String[] args) throws Exception { 
-        String filename = "/homes/hliang/tools/git_repo/SSS/testdata/line.png"; 
+        String inFileName = "./testdata/line.png"; 
+        if (args.length >= 1) {
+            inFileName = args[0];
+        }
  
         // load the file using Java's imageIO library 
-        BufferedImage image = javax.imageio.ImageIO.read(new File(filename)); 
+        BufferedImage image = javax.imageio.ImageIO.read(new File(inFileName)); 
  
+        // create gray image
+        ExtendedBufferedImage ebimg = new ExtendedBufferedImage(image);
+        BufferedImage grayImage = ebimg.getGrayImage();
+        ImageIO.write(grayImage, "PNG", new File("gray.png"));
+
         // create a hough transform object with the right dimensions 
         HoughTransform h = new HoughTransform(image.getWidth(), image.getHeight()); 
  
         // add the points from the image (or call the addPoint method separately if your points are not in an image 
         h.addPoints(image); 
  
+        // hough transform image
+        BufferedImage htImage = h.getHoughArrayImage();
+        ImageIO.write(htImage, "PNG", new File("ht.png"));
+
         // get the lines out 
-        Vector<HoughLine> lines = h.getLines(30); 
+        Vector<HoughLine> lines = h.getLines(100); 
  
-        // draw the lines back onto the image 
+        // draw the lines (in red color) back onto the image 
         for (int j = 0; j < lines.size(); j++) { 
             HoughLine line = lines.elementAt(j); 
             line.draw(image, Color.RED.getRGB()); 
         } 
+
+        // save image
+        ImageIO.write(image, "PNG", new File("output.png"));
+
     } 
  
     // The size of the neighbourhood in which to search for other local maxima 
@@ -158,10 +175,16 @@ public class HoughTransform extends Thread {
         // Now find edge points and update the hough array 
         for (int x = 0; x < image.getWidth(); x++) { 
             for (int y = 0; y < image.getHeight(); y++) { 
+                /*
                 // Find non-black pixels 
                 if ((image.getRGB(x, y) & 0x000000ff) != 0) { 
                     addPoint(x, y); 
-                } 
+                }
+                */
+                // find non-white pixels
+                if ((image.getRGB(x,y) ^ 0xffffffff)!=0) {
+                    addPoint(x,y);
+                }
             } 
         } 
     } 
@@ -273,5 +296,38 @@ public class HoughTransform extends Thread {
         } 
         return image; 
     } 
+
+    /**
+     * convert color image to gray scale image
+     */
+    public static BufferedImage getGrayImage(BufferedImage colorImage) {
+        ///*
+    	BufferedImage grayImage = new BufferedImage(colorImage.getWidth(), colorImage.getHeight(), 
+    			BufferedImage.TYPE_INT_ARGB);
+    	for (int x = 0; x < colorImage.getWidth(); x++) {
+            for (int y = 0; y < colorImage.getHeight(); y++) {
+                Color color = new Color(colorImage.getRGB(x, y));
+                int red = color.getRed();
+                int green = color.getGreen();
+                int blue = color.getBlue();
+
+                red = green = blue = (int)(red * 0.299 + green * 0.587 + blue * 0.114);
+                color = new Color(red, green, blue);
+                int rgb = color.getRGB();
+                grayImage.setRGB(x, y, rgb);
+            }
+        }
+        //*/
+        /*
+         * OR use this method
+         */
+        /*
+        BufferedImage grayImage = new BufferedImage(colorImage.getWidth(), colorImage.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+        Graphics g = grayImage.getGraphics();
+        g.drawImage(colorImage, 0, 0, null);
+        g.dispose();
+        */
+    	return grayImage;
+    }
  
 } 
