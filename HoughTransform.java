@@ -1,4 +1,4 @@
-package ac.essex.ooechs.imaging.commons.edge.hough; 
+// package ac.essex.ooechs.imaging.commons.edge.hough; 
  
 import java.awt.image.BufferedImage; 
 import java.awt.*; 
@@ -48,7 +48,7 @@ import java.io.File;
 public class HoughTransform extends Thread { 
  
     public static void main(String[] args) throws Exception { 
-        String filename = "/home/ooechs/Desktop/vase.png"; 
+        String filename = "/homes/hliang/tools/git_repo/SSS/testdata/line.png"; 
  
         // load the file using Java's imageIO library 
         BufferedImage image = javax.imageio.ImageIO.read(new File(filename)); 

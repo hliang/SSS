@@ -1,4 +1,4 @@
-package ac.essex.ooechs.imaging.commons.edge.hough; 
+// package ac.essex.ooechs.imaging.commons.edge.hough; 
  
 import java.awt.image.BufferedImage; 
  
