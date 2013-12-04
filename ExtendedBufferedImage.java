@@ -77,9 +77,9 @@ public class ExtendedBufferedImage{
     /*
      * convolve with filter
      */
-    public BufferedImage convolve( float[] filterArray ) {
+    public BufferedImage convolve(int filterRows, int filterCols float[] filterArray ) {
         BufferedImage dstImage = null;
-        Kernel kernel = new Kernel(3, 3, filterArray);  // tell the Kernel class that we want this array to be treated as a 3 x 3 matrix.
+        Kernel kernel = new Kernel(filterRows, filterCols, filterArray);  // tell the Kernel class that we want this array to be treated as a filterRows x filterCols matrix.
         ConvolveOp op = new ConvolveOp(kernel);
         dstImage = op.filter(image, null);  // when destination image is null, a BufferedImage will be created with the source ColorModel.
         return dstImage;
