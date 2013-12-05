@@ -25,7 +25,7 @@ public class SSS extends Thread {
 
         // get edges in gray image
         ebimg = new ExtendedBufferedImage(grayImage);
-        BufferedImage edgeImage = ebimg.getEdges();
+        BufferedImage edgeImage = ebimg.getEdges2();
         ImageIO.write(edgeImage, "PNG", new File("edge.png"));
 
 
