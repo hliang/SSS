@@ -25,8 +25,13 @@ public class SSS extends Thread {
 
         // get edges in gray image
         ebimg = new ExtendedBufferedImage(grayImage);
-        BufferedImage edgeImage = ebimg.getEdges2();
+        BufferedImage edgeImage = ebimg.getEdges();
         ImageIO.write(edgeImage, "PNG", new File("edge.png"));
+
+        // rotate image by 'angel' degrees
+        double angle = Double.parseDouble(args[1]);
+        BufferedImage rotatedImage = ebimg.rotate(angle);
+        ImageIO.write(rotatedImage, "PNG", new File("rotated.png"));
 
 
         // create a hough transform object with the right dimensions 

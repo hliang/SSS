@@ -2,6 +2,8 @@
  * Create a wrapper class that has an instance of a BufferedImage, and then add your methods in.
  */
 
+import java.awt.GraphicsConfiguration;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.Color;
 import java.awt.image.Kernel;
@@ -77,9 +79,39 @@ public class ExtendedBufferedImage{
     /*
      * rotate
      */
-    public void rotate() {
+    public BufferedImage rotate(double angle){
+        double sin = Math.abs(Math.sin(Math.toRadians(angle))), cos = Math.abs(Math.cos(Math.toRadians(angle)));
+        int w = image.getWidth(null), h = image.getHeight(null);
+        int neww = (int) Math.floor(w * cos + h * sin), newh = (int) Math.floor(h * cos + w * sin);
 
+        BufferedImage bimg = new BufferedImage(neww, newh, BufferedImage.TYPE_INT_ARGB);
+
+        Graphics2D g = bimg.createGraphics();
+        g.translate((neww - w) / 2, (newh - h) / 2);
+        g.rotate(Math.toRadians(angle), w / 2, h / 2);
+        g.drawRenderedImage(image, null);
+        g.dispose();
+        return bimg;
     }
+
+    ////////////////////////////////////////////////
+    /* // could not get this mothod work properly. Maybe need to import some package
+    public BufferedImage rotate1(double angle) {
+        double sin = Math.abs(Math.sin(angle)), cos = Math.abs(Math.cos(angle));
+        int w = image.getWidth(), h = image.getHeight();
+        int neww = (int)Math.floor(w*cos+h*sin), newh = (int)Math.floor(h*cos+w*sin);
+
+        GraphicsConfiguration gc = getDefaultConfiguration();
+        BufferedImage result = gc.createCompatibleImage(neww, newh, Transparency.TRANSLUCENT);
+
+        Graphics2D g = result.createGraphics();
+        g.translate((neww-w)/2, (newh-h)/2);
+        g.rotate(angle, w/2, h/2);
+        g.drawRenderedImage(image, null);
+        g.dispose();
+        return result;
+    }
+    */
 
     /*
      * convolve with filter
@@ -96,61 +128,10 @@ public class ExtendedBufferedImage{
     
     /*
      * edge detection
-     * bug ?: edge from dark to light is not recognized well,
-     *      although edge from light to dark is well detected.
+     * This edge detection method is coded by hand, without using ConvolveOp.
+     * Result looks better than the method using ConvolveOp.
      */
     public BufferedImage getEdges(){
-        BufferedImage edgeImage = new BufferedImage(image.getWidth(), image.getHeight(),
-                                                    BufferedImage.TYPE_INT_ARGB);
-        BufferedImage edgeX = convolve(3, 3, sobelFilterX);
-        BufferedImage edgeY = convolve(3, 3, sobelFilterY);
-        for (int x = 0; x < edgeImage.getWidth(); x++) {
-            for (int y = 0; y < edgeImage.getHeight(); y++) {
-                int oldColorX = edgeX.getRGB(x, y);
-                int oldColorY = edgeY.getRGB(x, y);
-                int alpha = 0xff;
-                int newColorX = oldColorX | (alpha << 24); // set alpha chanel to 0xFF
-                int newColorY = oldColorY | (alpha << 24); // set alpha chanel to 0xFF
-
-                //Color newColorX = new Color(oldColorX.getRed(), oldColor.getGreen(), oldColor.getBlue()); // creat new color with alpha chanel set to 0xFF;
-                //Color newColorY = new Color(oldColorY.getRed(), oldColor.getGreen(), oldColor.getBlue()); // creat new color with alpha chanel set to 0xFF;
-                // set color
-                edgeX.setRGB(x, y, newColorX);
-                edgeY.setRGB(x, y, newColorY);
-            }
-        }
-        
-        // save images showing horizontal lines and vertical lines
-        try {
-            ImageIO.write(edgeX, "PNG", new File("edgeX.png"));
-            ImageIO.write(edgeY, "PNG", new File("edgeY.png"));
-        } catch(IOException e){
-            e.printStackTrace();
-        }
-
-        // color in the edge image
-        for (int x = 0; x < edgeImage.getWidth(); x++) {
-            for (int y = 0; y < edgeImage.getHeight(); y++) {
-                Color color;
-                Color colorX = new Color(edgeX.getRGB(x, y));   // needs java.awt.Color
-                Color colorY = new Color(edgeY.getRGB(x, y));   // needs java.awt.Color
-                int red = (int) (Math.sqrt(Math.pow(colorX.getRed(), 2) + Math.pow(colorY.getRed(), 2))/1.42);
-                int green = (int) (Math.sqrt(Math.pow(colorX.getGreen(), 2) + Math.pow(colorY.getGreen(), 2)) / 1.42);
-                int blue = (int) (Math.sqrt(Math.pow(colorX.getBlue(), 2) + Math.pow(colorY.getBlue(), 2)) / 1.42);
-
-                color = new Color(red, green, blue);
-                int rgb = color.getRGB();
-                edgeImage.setRGB(x, y, rgb);
-            }
-        }
-        return edgeImage;
-    }
-
-
-    /*
-     * edge detection method coded by hand, without using ConvolveOp
-     */
-    public BufferedImage getEdges2(){
         BufferedImage edgeImage = new BufferedImage(image.getWidth(), image.getHeight(),
                                                     BufferedImage.TYPE_INT_ARGB);
         BufferedImage edgeX = new BufferedImage(image.getWidth(), image.getHeight(),
@@ -163,7 +144,7 @@ public class ExtendedBufferedImage{
                 int targetSumY = 0;
                 int targetSumZ = 0;
                 int k = 0;
-                // convolve with sobel filter
+                // convolve with sobel filter. without using ConvolveOp objects and methods.
                 for (int i = x - 1; i <= x + 1; i++) {
                     for (int j = y - 1; j <= y + 1; j++) {
                         int blueChanel = image.getRGB(i, j) & 0x000000FF ; // get blue. for gray image, one chanel (R/G/B) is enough
@@ -204,5 +185,72 @@ public class ExtendedBufferedImage{
 
     }
 
+     /* this method use ConvolveOp objects and methods.
+      * but not not working as desired.
+      * bug ?: edge from dark to light is not recognized well,
+      *       although edge from light to dark is well detected.
+      */
+    public BufferedImage getEdgesBad(){
+        BufferedImage edgeImage = new BufferedImage(image.getWidth(), image.getHeight(),
+                                                    BufferedImage.TYPE_INT_ARGB);
+        BufferedImage edgeX = convolve(3, 3, sobelFilterX);
+        BufferedImage edgeY = convolve(3, 3, sobelFilterY);
+        for (int x = 0; x < edgeImage.getWidth(); x++) {
+            for (int y = 0; y < edgeImage.getHeight(); y++) {
+                int oldColorX = edgeX.getRGB(x, y);
+                int oldColorY = edgeY.getRGB(x, y);
+                int alpha = 0xff;
+                int newColorX = oldColorX | (alpha << 24); // set alpha chanel to 0xFF
+                int newColorY = oldColorY | (alpha << 24); // set alpha chanel to 0xFF
+
+                //Color newColorX = new Color(oldColorX.getRed(), oldColor.getGreen(), oldColor.getBlue()); // creat new color with alpha chanel set to 0xFF;
+                //Color newColorY = new Color(oldColorY.getRed(), oldColor.getGreen(), oldColor.getBlue()); // creat new color with alpha chanel set to 0xFF;
+                // set color
+                edgeX.setRGB(x, y, newColorX);
+                edgeY.setRGB(x, y, newColorY);
+            }
+        }
+        
+        // save images showing horizontal lines and vertical lines
+        try {
+            ImageIO.write(edgeX, "PNG", new File("edgeX.png"));
+            ImageIO.write(edgeY, "PNG", new File("edgeY.png"));
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+
+        // draw edges. combine horizontal and vertical edges
+        for (int x = 0; x < edgeImage.getWidth(); x++) {
+            for (int y = 0; y < edgeImage.getHeight(); y++) {
+                Color color;
+                Color colorX = new Color(edgeX.getRGB(x, y));   // needs java.awt.Color
+                Color colorY = new Color(edgeY.getRGB(x, y));   // needs java.awt.Color
+                int red = (int) (Math.sqrt(Math.pow(colorX.getRed(), 2) + Math.pow(colorY.getRed(), 2))/1.42);
+                int green = (int) (Math.sqrt(Math.pow(colorX.getGreen(), 2) + Math.pow(colorY.getGreen(), 2)) / 1.42);
+                int blue = (int) (Math.sqrt(Math.pow(colorX.getBlue(), 2) + Math.pow(colorY.getBlue(), 2)) / 1.42);
+
+                color = new Color(red, green, blue);
+                int rgb = color.getRGB();
+                edgeImage.setRGB(x, y, rgb);
+            }
+        }
+        return edgeImage;
+    }
+
+
+
+    /*
+     * gaussian blur
+     */
+    public void gBlur(){
+
+    }
+
+    /*
+     * sharpen 
+     */
+    public void sharpen(){
+
+    }
 }
 
